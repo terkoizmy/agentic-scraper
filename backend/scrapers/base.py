@@ -1,0 +1,1 @@
+# BaseScraper abstract class - TODO
