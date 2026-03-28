@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # Ollama (Embedding)
     ollama_base_url: str = "http://localhost:11434"
     ollama_embed_model: str = "bge-m3"
+    ollama_api_key: str | None = None
 
     # Supabase (prod)
     supabase_url: str = ""
@@ -37,5 +38,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"  # Ignore extra environment variables
 
 settings = Settings()

@@ -25,4 +25,4 @@ def setup_logger():
 
     return logger
 
-setup_logger()
+
