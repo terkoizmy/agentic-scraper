@@ -1,32 +1,9 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom"
 import { Bot, Database, Blocks } from "lucide-react"
+import AgentPage from "./pages/agent/agent-page"
 
-// Temporary stub pages until we create the real ones in src/pages
-const Dashboard = () => (
-  <div className="p-8">
-    <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500">
-      Agentic Scraper
-    </h1>
-    <p className="mt-4 text-muted-foreground text-lg">
-      Welcome to the MiniMax LLM-orchestrated web scraper.
-    </p>
-
-    <div className="grid grid-cols-3 gap-6 mt-10">
-      <div className="p-6 rounded-xl border bg-card/60 backdrop-blur-sm shadow-sm transition-all hover:shadow-md">
-        <h3 className="font-semibold text-xl">Sources</h3>
-        <p className="text-3xl font-bold mt-2">0</p>
-      </div>
-      <div className="p-6 rounded-xl border bg-card/60 backdrop-blur-sm shadow-sm transition-all hover:shadow-md">
-        <h3 className="font-semibold text-xl">Running Jobs</h3>
-        <p className="text-3xl font-bold mt-2">0</p>
-      </div>
-      <div className="p-6 rounded-xl border bg-card/60 backdrop-blur-sm shadow-sm transition-all hover:shadow-md">
-        <h3 className="font-semibold text-xl">Documents</h3>
-        <p className="text-3xl font-bold mt-2">0</p>
-      </div>
-    </div>
-  </div>
-)
+import DashboardPage from "./pages/dashboard/dashboard-page"
+import SourcesPage from "./pages/sources/sources-page"
 
 export default function App() {
   return (
@@ -55,9 +32,9 @@ export default function App() {
         {/* Content Area */}
         <main className="flex-1 overflow-auto bg-white dark:bg-zinc-950">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/agent" element={<div className="p-8"><h2 className="text-2xl font-bold">Agent Chat / Console</h2></div>} />
-            <Route path="/sources" element={<div className="p-8"><h2 className="text-2xl font-bold">Manage Sources</h2></div>} />
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/agent" element={<AgentPage />} />
+            <Route path="/sources" element={<SourcesPage />} />
           </Routes>
         </main>
       </div>
