@@ -95,7 +95,7 @@ async def run_agent(message: str, session_id: str | None = None) -> tuple[str, s
             t_args = t_func.get("arguments", "{}")
 
             t_result = await dispatch_tool_call(t_name, t_args)
-            t_result_str = json.dumps(t_result)
+            t_result_str = json.dumps(t_result, default=str)
 
             try:
                 parsed_args = json.loads(t_args)
