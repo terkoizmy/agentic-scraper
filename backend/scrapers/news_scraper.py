@@ -4,6 +4,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from core.exceptions import ScraperError
 from scrapers.base import BaseScraper, ScrapeResult
+from scrapers.crawl_config import NEWS_MARKDOWN_GENERATOR
 
 
 class NewsScraper(BaseScraper):
@@ -23,13 +24,17 @@ class NewsScraper(BaseScraper):
         logger.info("NewsScraper: scraping {}", url)
         try:
             async with AsyncWebCrawler() as crawler:
-                result = await crawler.arun(url=url)
+                result = await crawler.arun(
+                    url=url,
+                    markdown_generator=NEWS_MARKDOWN_GENERATOR,
+                )
         except Exception as exc:
             raise ScraperError(f"Crawl4AI failed for '{url}': {exc}") from exc
 
-        if not result.markdown:
+        fit_md = result.markdown.fit_markdown if result.markdown else ""
+        if not fit_md:
             raise ScraperError(f"No markdown extracted from '{url}'")
 
         title = result.metadata.get("title") if result.metadata else None
-        logger.success("NewsScraper: {} chars extracted from {}", len(result.markdown), url)
-        return ScrapeResult(url=url, markdown=result.markdown, title=title)
+        logger.success("NewsScraper: {} chars extracted from {}", len(fit_md), url)
+        return ScrapeResult(url=url, markdown=fit_md, title=title)

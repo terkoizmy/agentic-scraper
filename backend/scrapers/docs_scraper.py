@@ -4,6 +4,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from core.exceptions import ScraperError
 from scrapers.base import BaseScraper, ScrapeResult
+from scrapers.crawl_config import DOCS_MARKDOWN_GENERATOR
 
 
 class DocsScraper(BaseScraper):
@@ -27,15 +28,19 @@ class DocsScraper(BaseScraper):
         logger.info("DocsScraper: scraping {}", url)
         try:
             async with AsyncWebCrawler() as crawler:
-                result = await crawler.arun(url=url)
+                result = await crawler.arun(
+                    url=url,
+                    markdown_generator=DOCS_MARKDOWN_GENERATOR,
+                )
         except Exception as exc:
             raise ScraperError(f"Crawl4AI failed for docs URL '{url}': {exc}") from exc
 
-        if not result.markdown:
+        fit_md = result.markdown.fit_markdown if result.markdown else ""
+        if not fit_md:
             raise ScraperError(f"No markdown extracted from docs URL '{url}'")
 
         title = result.metadata.get("title") if result.metadata else None
-        return ScrapeResult(url=url, markdown=result.markdown, title=title)
+        return ScrapeResult(url=url, markdown=fit_md, title=title)
 
     async def crawl_all(self, base_url: str) -> list[ScrapeResult]:
         """Recursively crawl all internal pages from a base URL.
@@ -66,16 +71,20 @@ class DocsScraper(BaseScraper):
                 visited.add(current_url)
 
                 try:
-                    result = await crawler.arun(url=current_url)
+                    result = await crawler.arun(
+                        url=current_url,
+                        markdown_generator=DOCS_MARKDOWN_GENERATOR,
+                    )
                 except Exception as exc:
                     logger.warning("DocsScraper: skipping '{}' — {}", current_url, exc)
                     continue
 
-                if not result.markdown:
+                fit_md = result.markdown.fit_markdown if result.markdown else ""
+                if not fit_md:
                     continue
 
                 title = result.metadata.get("title") if result.metadata else None
-                results.append(ScrapeResult(url=current_url, markdown=result.markdown, title=title))
+                results.append(ScrapeResult(url=current_url, markdown=fit_md, title=title))
                 logger.debug("DocsScraper: ({}/{}) {}", len(results), self._max_pages, current_url)
 
                 if current_depth < self._depth and result.links:
