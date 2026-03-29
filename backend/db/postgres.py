@@ -256,5 +256,6 @@ async def save_agent_session(
             INSERT INTO agent_sessions (session_id, user_message, tool_calls, final_answer)
             VALUES ($1, $2, $3, $4)
             """,
-            session_id, user_message, json.dumps(tool_calls), final_answer,
+            session_id, user_message, json.dumps(tool_calls, default=str), final_answer,
         )
+
