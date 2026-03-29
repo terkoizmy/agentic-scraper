@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 
@@ -9,14 +10,16 @@ def get_or_create_session(session_id: Optional[str] = None) -> tuple[str, List[D
     """Retrieve an existing session or initialize a fresh context."""
     if not session_id or session_id not in _active_sessions:
         session_id = str(uuid.uuid4())
+        current_date_str = datetime.now().strftime("%Y-%m-%d")
         _active_sessions[session_id] = [
             {
                 "role": "system",
                 "content": (
-                    "Anda adalah agen pintar yang memiliki kemampuan scraping web, "
-                    "crawling dokumentasi, dan query data (RAG). Tugas Anda adalah "
-                    "membantu pengguna mencari informasi dari website atau database lokal "
-                    "dengan menggunakan tool yang tersedia. Gunakan tool jika konteks belum cukup."
+                    f"Anda adalah agen pintar yang memiliki kemampuan scraping web, "
+                    f"crawling dokumentasi, dan query data (RAG). Waktu dan tanggal saat ini adalah {current_date_str}. "
+                    f"Tugas Anda adalah membantu pengguna mencari informasi dari website atau "
+                    f"database lokal dengan menggunakan tool yang tersedia. Gunakan tool "
+                    f"terutama web_search jika konteks waktu terkini diperlukan."
                 ),
             }
         ]
