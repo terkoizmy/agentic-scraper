@@ -3,7 +3,7 @@ from loguru import logger
 
 from agent.brain import run_agent
 from db import postgres
-from models.schemas import AgentAskRequest, AgentAskResponse
+from models.schemas import AgentAskRequest, AgentAskResponse, WebSearchRequest, WebSearchResponse
 
 router = APIRouter()
 
@@ -31,3 +31,21 @@ async def agent_ask(body: AgentAskRequest):
     )
 
     return AgentAskResponse(answer=answer, tool_calls=tool_calls, session_id=session_id)
+
+
+@router.post("/search", response_model=WebSearchResponse)
+async def web_search_endpoint(body: WebSearchRequest):
+    """Directly test the DuckDuckGo web search tool."""
+    from agent.tool_registry import execute_web_search
+    try:
+        res = await execute_web_search({"query": body.query, "max_results": body.max_results})
+        if "error" in res:
+            raise HTTPException(status_code=500, detail=res["error"])
+        return WebSearchResponse(query=res["query"], results=res["results"])
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Web search failed: {exc}",
+        )

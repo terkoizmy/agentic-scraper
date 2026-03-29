@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any, Callable
 
@@ -63,11 +64,33 @@ async def execute_store_content(args: dict[str, Any]) -> dict[str, Any]:
         return {"error": _get_error_msg(exc)}
 
 
+async def execute_web_search(args: dict[str, Any]) -> dict[str, Any]:
+    """Execute web_search tool using DuckDuckGo."""
+    try:
+        from ddgs import DDGS
+        query = args.get("query")
+        if not query:
+            return {"error": "Query is required"}
+        max_results = args.get("max_results", 5)
+        
+        def _search():
+            return list(DDGS().text(query, max_results=max_results))
+            
+        results = await asyncio.to_thread(_search)
+        return {"query": query, "results": results}
+    except ImportError:
+        return {"error": "Package 'ddgs' is not installed."}
+    except Exception as exc:
+        logger.error("Web search failed: {}", exc)
+        return {"error": _get_error_msg(exc)}
+
+
 TOOL_DISPATCHER: dict[str, Callable] = {
     "scrape_page": execute_scrape_page,
     "crawl_docs": execute_crawl_docs,
     "rag_query": execute_rag_query,
     "store_content": execute_store_content,
+    "web_search": execute_web_search,
 }
 
 

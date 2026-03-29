@@ -112,9 +112,10 @@ async def crawl_docs(body: CrawlRequest):
 
     try:
         raw_pages = await doc_scraper.crawl_all(body.base_url)
-    except ScraperError as exc:
+    except Exception as exc:
+        logger.error("Fatal exception during crawl: {}", exc)
         await postgres.finish_job(job_id, JobStatus.FAILED, 0, 0, error=str(exc))
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
     total_chunks = 0
     total_dupes = 0

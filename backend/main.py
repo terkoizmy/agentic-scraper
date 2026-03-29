@@ -60,4 +60,4 @@ if __name__ == "__main__":
     # Run programmatically so the ProactorEventLoopPolicy takes precedence.
     # IMPORTANT: reload=False is required on Windows so Uvicorn doesn't spawn
     # a separate worker process that resets the event loop to SelectorEventLoop.
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)

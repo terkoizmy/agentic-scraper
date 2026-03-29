@@ -21,8 +21,20 @@ def _normalize_whitespace(text: str) -> str:
 
 
 def _remove_noise_patterns(text: str) -> str:
-    """Remove common web noise like repeated separator lines (---, ===)."""
-    return re.sub(r"^[-=*_]{3,}\s*$", "", text, flags=re.MULTILINE)
+    """Remove common web noise like repeated separator lines and heavy markdown links."""
+    # Remove separator lines
+    text = re.sub(r"^[-=*_]{3,}\s*$", "", text, flags=re.MULTILINE)
+    
+    # Remove heavy image wrappers e.g., [![Image...](...)](...)
+    text = re.sub(r"\[!\[.*?\]\(.*?\)\]\(.*?\)", "", text)
+    # Remove standalone images e.g., ![Image...](...)
+    text = re.sub(r"!\[.*?\]\(.*?\)", "", text)
+    
+    # Simplify heavily-nested links in navbars
+    # Convert [Text](url) to just Text IF it's in a dense list (basic heuristic)
+    text = re.sub(r"^\s*[\*\-]\s*\[([^\]]+)\]\([^\)]+\)\s*$", r"* \1", text, flags=re.MULTILINE)
+    
+    return text
 
 
 def clean_scrape_result(result: ScrapeResult) -> ScrapeResult:

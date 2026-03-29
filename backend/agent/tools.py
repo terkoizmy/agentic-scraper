@@ -59,5 +59,20 @@ TOOLS = [
                 "required": ["url", "markdown"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "web_search",
+            "description": "Cari informasi di internet menggunakan mesin pencari (DuckDuckGo). Gunakan ini jika Anda butuh mencari URL dokumentasi yang benar.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query":  {"type": "string", "description": "Kata kunci pencarian natural language"},
+                    "max_results": {"type": "integer", "description": "Jumlah hasil yang dikembalikan (default: 5)"}
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]

@@ -145,3 +145,13 @@ class AgentAskResponse(BaseModel):
     answer: str
     tool_calls: list[ToolCallRecord]
     session_id: str
+
+
+class WebSearchRequest(BaseModel):
+    query: str
+    max_results: int = Field(default=5, ge=1, le=20)
+
+
+class WebSearchResponse(BaseModel):
+    query: str
+    results: list[dict]
