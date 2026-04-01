@@ -45,3 +45,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# ─── AI ──────────────────────────────────────────
+AGENTS.md
+opencode.json

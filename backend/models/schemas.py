@@ -155,3 +155,19 @@ class WebSearchRequest(BaseModel):
 class WebSearchResponse(BaseModel):
     query: str
     results: list[dict]
+
+
+class DeepResearchRequest(BaseModel):
+    query: str
+    complexity: str = "medium"
+    deep_crawl: bool = False
+
+
+class DeepResearchResponse(BaseModel):
+    status: str
+    confidence: float
+    rag_results: list[QueryResult]
+    websites_searched: int
+    websites_scraped: int
+    total_chunks_stored: int
+    deep_crawl_results: dict[str, CrawlResponse] = {}

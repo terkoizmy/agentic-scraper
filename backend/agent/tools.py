@@ -74,5 +74,23 @@ TOOLS = [
                 "required": ["query"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "deep_research",
+            "description": "Lakukan penelitian mendalam untuk query yang berkaitan dengan kode/dokumentasi. "
+                           "Secara otomatis mencari di internet, scrape website yang relevan, dan simpan ke vector DB. "
+                           "Abaikan tool ini untuk query non-kode.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Query pencarian untuk deep research"},
+                    "complexity": {"type": "string", "description": "Tingkat kompleksitas query: 'low' (3 situs), 'medium' (5 situs), 'high' (8 situs). Default: 'medium'. Biarkan kosong untuk auto-detect."},
+                    "deep_crawl": {"type": "boolean", "description": "Aktifkan deep crawl (depth=2) untuk dokumentasi kode. Default: false"}
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]
