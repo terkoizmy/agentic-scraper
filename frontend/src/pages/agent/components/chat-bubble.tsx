@@ -3,10 +3,33 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import { PrismLight } from 'react-syntax-highlighter';
+import tomorrow from 'react-syntax-highlighter/dist/esm/styles/prism/tomorrow';
+import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
+import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
+import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
+import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
+import sql from 'react-syntax-highlighter/dist/esm/languages/prism/sql';
+import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
 import 'katex/dist/katex.min.css';
 import type { ChatMessage } from '../types/agent-types';
 import { RoleType } from '../types/agent-types';
 import { ToolCallTrace } from './tool-call-trace';
+
+PrismLight.registerLanguage('python', python);
+PrismLight.registerLanguage('javascript', javascript);
+PrismLight.registerLanguage('typescript', typescript);
+PrismLight.registerLanguage('jsx', jsx);
+PrismLight.registerLanguage('tsx', tsx);
+PrismLight.registerLanguage('bash', bash);
+PrismLight.registerLanguage('json', json);
+PrismLight.registerLanguage('sql', sql);
+PrismLight.registerLanguage('yaml', yaml);
+PrismLight.registerLanguage('markdown', markdown);
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -44,24 +67,35 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
               remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[rehypeKatex]}
               components={{
-                p: ({node, ...props}: any) => <p className="mb-3 last:mb-0" {...props} />,
-                ul: ({node, ...props}: any) => <ul className="list-disc pl-5 mb-3" {...props} />,
-                ol: ({node, ...props}: any) => <ol className="list-decimal pl-5 mb-3" {...props} />,
-                li: ({node, ...props}: any) => <li className="mb-1" {...props} />,
-                h1: ({node, ...props}: any) => <h1 className="text-xl font-bold mb-3 mt-4" {...props} />,
-                h2: ({node, ...props}: any) => <h2 className="text-lg font-bold mb-2 mt-4" {...props} />,
-                h3: ({node, ...props}: any) => <h3 className="text-base font-bold mb-2 mt-3" {...props} />,
-                a: ({node, ...props}: any) => <a className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noreferrer" {...props} />,
-                code: ({node, className, children, ...props}: any) => {
-                  const isInline = !className;
-                  return isInline 
-                    ? <code className="bg-zinc-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-sm text-pink-600 dark:text-pink-400 font-mono" {...props}>{children}</code>
-                    : <pre className="bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg overflow-x-auto mb-3 mt-2"><code className="text-zinc-100 text-sm font-mono" {...props}>{children}</code></pre>;
+                p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3" {...props} />,
+                ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3" {...props} />,
+                li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-3 mt-4" {...props} />,
+                h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-2 mt-4" {...props} />,
+                h3: ({node, ...props}) => <h3 className="text-base font-bold mb-2 mt-3" {...props} />,
+                a: ({node, ...props}) => <a className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noreferrer" {...props} />,
+                code: ({node, className, children, ...props}) => {
+                  const isInline = !className || !className.includes('language-');
+                  if (isInline) {
+                    return <code className="bg-zinc-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-sm text-pink-600 dark:text-pink-400 font-mono" {...props}>{children}</code>;
+                  }
+                  const match = /language-(\w+)/.exec(className || '');
+                  const language = match ? match[1] : 'plaintext';
+                  return (
+                    <PrismLight
+                      style={tomorrow}
+                      language={language}
+                      className="!bg-zinc-900 !rounded-lg !mb-3 !mt-2 !p-3 !text-sm"
+                    >
+                      {String(children).replace(/\n$/, '')}
+                    </PrismLight>
+                  );
                 },
-                blockquote: ({node, ...props}: any) => <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-600 pl-4 py-1 italic mb-3 text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50" {...props} />,
-                table: ({node, ...props}: any) => <div className="overflow-x-auto mb-3"><table className="w-full text-sm text-left" {...props} /></div>,
-                th: ({node, ...props}: any) => <th className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 border dark:border-zinc-700 font-semibold" {...props} />,
-                td: ({node, ...props}: any) => <td className="px-3 py-2 border dark:border-zinc-700" {...props} />
+                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-600 pl-4 py-1 italic mb-3 text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50" {...props} />,
+                table: ({node, ...props}) => <div className="overflow-x-auto mb-3"><table className="w-full text-sm text-left" {...props} /></div>,
+                th: ({node, ...props}) => <th className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 border dark:border-zinc-700 font-semibold" {...props} />,
+                td: ({node, ...props}) => <td className="px-3 py-2 border dark:border-zinc-700" {...props} />
               }}
             >
               {message.content}

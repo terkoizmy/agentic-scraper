@@ -93,6 +93,7 @@ Agen AI selalu mengikuti **urutan prioritas yang cerdas**:
 | HTTP Client | Axios |
 | Markdown Render | `react-markdown` + `remark-gfm` |
 | Math Rendering | KaTeX (`remark-math` + `rehype-katex`) |
+| Syntax Highlighting | Prism.js (Tomorrow Dark theme) |
 | State Management | React Hooks + localStorage |
 
 ---
@@ -121,6 +122,11 @@ Chat UI mendukung **KaTeX rendering** untuk rumus matematika. Ekspresi seperti:
 - Block: `$$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$`
 
 Akan dirender sebagai formula matematika yang proper, bukan text mentah.
+
+### 🎨 Code Syntax Highlighting
+Code blocks memiliki **syntax highlighting warna-warni** menggunakan Prism.js dengan tema Tomorrow Dark - similar to VSCode. Mendukung berbagai bahasa:
+- Python, JavaScript, TypeScript
+- JSX/TSX, Bash, JSON, SQL, YAML, Markdown
 
 ### 🔄 Automatic Knowledge Capture
 Setiap halaman yang di-scrape/crawl oleh agen **otomatis tersimpan** ke ChromaDB dan PostgreSQL. Pertanyaan berikutnya tentang topik yang sama akan dijawab dari memori lokal — jauh lebih cepat dan hemat API token.
