@@ -45,11 +45,25 @@ async def scrape_with_fallback(url: str) -> ScrapeResult:
     try:
         return await primary.scrape(url)
     except (ScraperError, RetryError) as primary_error:
-        logger.warning("Primary scraper failed for '{}': {}. Falling back to Jina.", url, primary_error)
+        logger.warning(
+            "Primary scraper ({}) failed for '{}': {} | "
+            "Error type: {}, Args: {} | "
+            "Falling back to Jina.",
+            primary.__class__.__name__,
+            url,
+            primary_error,
+            type(primary_error).__name__,
+            getattr(primary_error, 'args', ()),
+        )
 
     try:
         return await JinaScraper().scrape(url)
     except (ScraperError, RetryError) as fallback_error:
+        logger.error(
+            "All scrapers failed for '{}'. "
+            "Primary error: {}, Jina error: {}",
+            url, primary_error, fallback_error
+        )
         raise ScraperError(
             f"All scrapers failed for '{url}'. Last error: {fallback_error}"
         ) from fallback_error

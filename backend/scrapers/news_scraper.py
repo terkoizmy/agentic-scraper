@@ -29,10 +29,16 @@ class NewsScraper(BaseScraper):
                     markdown_generator=NEWS_MARKDOWN_GENERATOR,
                 )
         except Exception as exc:
+            logger.error(
+                "NewsScraper: Crawl4AI failed for '{}'. "
+                "Exception type: {}, Exception message: {}, Trace: {}",
+                url, type(exc).__name__, str(exc), repr(exc)
+            )
             raise ScraperError(f"Crawl4AI failed for '{url}': {exc}") from exc
 
         fit_md = result.markdown.fit_markdown if result.markdown else ""
         if not fit_md:
+            logger.warning("NewsScraper: No markdown extracted from '{}'. Result: {}", url, result)
             raise ScraperError(f"No markdown extracted from '{url}'")
 
         title = result.metadata.get("title") if result.metadata else None

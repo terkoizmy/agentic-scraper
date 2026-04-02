@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 
 _active_sessions: Dict[str, List[Dict[str, Any]]] = {}
+_session_tool_calls: Dict[str, List[str]] = {}
 
 
 def get_or_create_session(session_id: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
@@ -63,3 +64,17 @@ def clear_session(session_id: str) -> None:
     """Wipe an active session."""
     if session_id in _active_sessions:
         del _active_sessions[session_id]
+    if session_id in _session_tool_calls:
+        del _session_tool_calls[session_id]
+
+
+def track_tool_call(session_id: str, tool_name: str) -> None:
+    """Record a tool call in session history."""
+    if session_id not in _session_tool_calls:
+        _session_tool_calls[session_id] = []
+    _session_tool_calls[session_id].append(tool_name)
+
+
+def has_rag_query_in_session(session_id: str) -> bool:
+    """Check if rag_query was called in this session."""
+    return "rag_query" in _session_tool_calls.get(session_id, [])

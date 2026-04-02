@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from fastapi import HTTPException
 from loguru import logger
@@ -19,8 +19,23 @@ def _get_error_msg(exc: Exception) -> str:
     return str(exc)
 
 
-async def execute_scrape_page(args: dict[str, Any]) -> dict[str, Any]:
+async def execute_scrape_page(args: dict[str, Any], session_id: Optional[str] = None) -> dict[str, Any]:
     """Execute scrape_page tool."""
+    from agent.memory import has_rag_query_in_session
+
+    if session_id and not has_rag_query_in_session(session_id):
+        from core.url_utils import _extract_topic_from_url
+        query = _extract_topic_from_url(args.get("url", ""))
+        logger.info("scrape_page called without prior rag_query, auto-searching for '{}'", query)
+
+        search_result = await execute_web_search({"query": query, "max_results": 5})
+        return {
+            "status": "requires_web_search_first",
+            "message": f"Web search executed for '{query}'. Review results before scraping:",
+            "search_results": search_result.get("results", []),
+            "suggestion": "After reviewing search results, call scrape_page again or use rag_query to store relevant content.",
+        }
+
     try:
         req = FetchRequest(**args)
         res = await fetch_page(req)
@@ -221,9 +236,9 @@ TOOL_DISPATCHER: dict[str, Callable] = {
 }
 
 
-async def dispatch_tool_call(tool_name: str, args_str: str) -> dict[str, Any]:
+async def dispatch_tool_call(tool_name: str, args_str: str, session_id: Optional[str] = None) -> dict[str, Any]:
     """Parse JSON arguments and invoke the corresponding tool module."""
-    logger.info("Agent parsing tool call: {} {}", tool_name, args_str)
+    logger.info("Agent parsing tool call: {} {} (session_id={})", tool_name, args_str, session_id)
     
     try:
         args = json.loads(args_str)
@@ -236,4 +251,6 @@ async def dispatch_tool_call(tool_name: str, args_str: str) -> dict[str, Any]:
         logger.error("Tool '{}' not defined in registry", tool_name)
         return {"error": f"Tool '{tool_name}' not found"}
 
+    if tool_name in ("scrape_page",):
+        return await handler(args, session_id)
     return await handler(args)

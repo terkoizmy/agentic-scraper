@@ -165,3 +165,23 @@ COMPLEXITY_WEBSITE_COUNT = {
     "medium": 5,
     "high": 8,
 }
+
+
+def _extract_topic_from_url(url: str) -> str:
+    """Extract a search query from URL for web search."""
+    if not url:
+        return url
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        path = parsed.path.strip("/")
+        if path:
+            parts = path.split("/")
+            topic = parts[-1] if parts[-1] else parts[-2] if len(parts) > 1 else ""
+            topic = topic.replace("-", " ").replace("_", " ")
+            if topic:
+                return topic
+        domain = parsed.netloc.replace("www.", "").replace(".com", "").replace(".org", "")
+        return domain
+    except Exception:
+        return url

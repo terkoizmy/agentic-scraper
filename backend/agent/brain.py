@@ -4,6 +4,7 @@ from typing import Any
 
 import httpx
 from loguru import logger
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from agent.memory import (
     add_message,
@@ -11,17 +12,30 @@ from agent.memory import (
     format_tool_message,
     format_user_message,
     get_or_create_session,
+    has_rag_query_in_session,
+    track_tool_call,
 )
 from agent.tool_registry import dispatch_tool_call
 from agent.tools import TOOLS
 from core.config import settings
 from core.exceptions import AgentError
+from core import settings_state
 from models.schemas import ToolCallRecord
 
 
+LLM_RETRY_ATTEMPTS = 3
+LLM_RETRY_MIN_WAIT = 2
+LLM_RETRY_MAX_WAIT = 10
+
+
+@retry(
+    stop=stop_after_attempt(LLM_RETRY_ATTEMPTS),
+    wait=wait_exponential(multiplier=1, min=LLM_RETRY_MIN_WAIT, max=LLM_RETRY_MAX_WAIT),
+    retry=retry_if_exception_type((httpx.ReadTimeout, httpx.HTTPStatusError)),
+    reraise=True,
+)
 async def _call_minimax(messages: list[dict[str, Any]]) -> dict[str, Any]:
     """Call MiniMax Chat API with tools using httpx."""
-    # Auto-detect if using official MiniMax API vs Ollama/OpenAI-compatible local server
     is_minimax = "minimax.chat" in settings.minimax_base_url
 
     if is_minimax and (not settings.minimax_api_key or not settings.minimax_group_id):
@@ -30,7 +44,6 @@ async def _call_minimax(messages: list[dict[str, Any]]) -> dict[str, Any]:
     if is_minimax:
         url = f"{settings.minimax_base_url.rstrip('/')}/text/chatcompletion_v2"
     else:
-        # Fallback to standard OpenAI compatibility format (used by Ollama)
         url = f"{settings.minimax_base_url.rstrip('/')}/chat/completions"
     headers = {
         "Authorization": f"Bearer {settings.minimax_api_key}",
@@ -44,17 +57,16 @@ async def _call_minimax(messages: list[dict[str, Any]]) -> dict[str, Any]:
         "temperature": settings.agent_temperature,
     }
 
-    try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(url, headers=headers, json=payload)
-            resp.raise_for_status()
-            return resp.json()
-    except httpx.HTTPError as exc:
-        msg = f"HTTP Error calling MiniMax: {exc}"
-        if isinstance(exc, httpx.HTTPStatusError):
-            msg += f" Response: {exc.response.text}"
-        logger.error(msg)
-        raise AgentError(msg) from exc
+    if settings_state.get_thinking_enabled():
+        payload["thinking"] = {
+            "type": "enabled",
+            "max_tokens": settings_state.get_thinking_max_tokens(),
+        }
+
+    async with httpx.AsyncClient(timeout=180.0) as client:
+        resp = await client.post(url, headers=headers, json=payload)
+        resp.raise_for_status()
+        return resp.json()
 
 
 async def run_agent(message: str, session_id: str | None = None) -> tuple[str, str, list[ToolCallRecord]]:
@@ -70,7 +82,17 @@ async def run_agent(message: str, session_id: str | None = None) -> tuple[str, s
     for iteration in range(settings.agent_max_iterations):
         logger.info("Agent ReAct loop iteration {}/{}", iteration + 1, settings.agent_max_iterations)
         
-        res = await _call_minimax(messages_copy)
+        try:
+            res = await _call_minimax(messages_copy)
+        except (httpx.ReadTimeout, httpx.HTTPStatusError) as exc:
+            logger.error("LLM call failed after {} retries: {}", LLM_RETRY_ATTEMPTS, exc)
+            error_msg = "Maaf, terjadi kesalahan saat menghubungi layanan AI. Silakan coba lagi dalam beberapa saat."
+            return error_msg, sid, executed_records
+        except Exception as exc:
+            logger.error("Unexpected error calling LLM: {}", exc)
+            error_msg = "Maaf, terjadi kesalahan yang tidak terduga. Silakan coba lagi."
+            return error_msg, sid, executed_records
+
         choices = res.get("choices", [])
         if not choices:
             raise AgentError(f"No choices returned by MiniMax: {res}")
@@ -94,7 +116,9 @@ async def run_agent(message: str, session_id: str | None = None) -> tuple[str, s
             t_name = t_func.get("name")
             t_args = t_func.get("arguments", "{}")
 
-            t_result = await dispatch_tool_call(t_name, t_args)
+            track_tool_call(sid, t_name)
+
+            t_result = await dispatch_tool_call(t_name, t_args, sid)
             t_result_str = json.dumps(t_result, default=str)
 
             try:

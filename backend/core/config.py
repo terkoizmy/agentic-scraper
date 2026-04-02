@@ -27,10 +27,12 @@ class Settings(BaseSettings):
     # MiniMax Agent Brain
     minimax_api_key: str = ""
     minimax_group_id: str = ""
-    minimax_model: str = "MiniMax-Text-01"
-    minimax_base_url: str = "https://api.minimax.chat/v1"
+    minimax_base_url: str = "https://ollama.com/v1"
+    minimax_model: str = "minimax-m2.7:cloud"
     agent_max_iterations: int = 10
     agent_temperature: float = 0.2
+    agent_thinking_enabled: bool = False
+    agent_thinking_max_tokens: int = 1024
 
     # Logging
     log_level: str = "INFO"

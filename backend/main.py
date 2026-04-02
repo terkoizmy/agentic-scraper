@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api import agent, jobs, query, scrape, sources
+from api import agent, jobs, query, scrape, settings, sources
 from core.logger import setup_logger
 from db import postgres
 from scheduler.cron import start_scheduler, stop_scheduler
@@ -48,6 +48,7 @@ app.include_router(scrape.router, prefix="/api/scrape", tags=["Scraping"])
 app.include_router(jobs.router, prefix="/api/scrape", tags=["Jobs"])
 app.include_router(query.router, prefix="/api", tags=["RAG Query"])
 app.include_router(agent.router, prefix="/api/agent", tags=["Agent"])
+app.include_router(settings.router, tags=["Settings"])
 
 
 @app.get("/")
