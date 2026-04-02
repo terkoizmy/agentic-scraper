@@ -92,6 +92,7 @@ Agen AI selalu mengikuti **urutan prioritas yang cerdas**:
 | Styling | Tailwind CSS v4 |
 | HTTP Client | Axios |
 | Markdown Render | `react-markdown` + `remark-gfm` |
+| Math Rendering | KaTeX (`remark-math` + `rehype-katex`) |
 | State Management | React Hooks + localStorage |
 
 ---
@@ -100,6 +101,26 @@ Agen AI selalu mengikuti **urutan prioritas yang cerdas**:
 
 ### 🧠 Intelligent ReAct Agent
 Agen menggunakan pola **Reason → Act → Observe** untuk membuat keputusan multi-langkah. Dengan limit 5 iterasi per sesi, agen mampu menggabungkan beberapa alat secara sinergis untuk menjawab pertanyaan kompleks.
+
+### 🎯 RAG-First Scraping
+Agen **selalu memeriksa Vector DB lokal terlebih dahulu** sebelum melakukan scraping. Jika `scrape_page` dipanggil tanpa adanya `rag_query` di session, sistem akan:
+1. Auto-redirect ke `web_search` untuk mencari referensi
+2. Mengembalikan hasil search untuk direview
+3. Baru kemudian mengizinkan `scrape_page`
+
+### 🧮 AI Thinking Mode (Toggleable)
+Agen mendukung **reasoning/thinking mode** untukimproved decision-making. Feature ini:
+- **Default**: Off (dikontrol via `AGENT_THINKING_ENABLED` env var)
+- **Runtime Toggle**: Bisa di-on/off-kan langsung dari Agent Console UI
+- **Token Budget**: Small (~1024 tokens default) untuk keep it simple
+- **Hybrid Config**: Env var sebagai default, FE toggle untuk runtime override
+
+### 📐 LaTeX Math Rendering
+Chat UI mendukung **KaTeX rendering** untuk rumus matematika. Ekspresi seperti:
+- Inline: `$E = mc^2$`
+- Block: `$$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$`
+
+Akan dirender sebagai formula matematika yang proper, bukan text mentah.
 
 ### 🔄 Automatic Knowledge Capture
 Setiap halaman yang di-scrape/crawl oleh agen **otomatis tersimpan** ke ChromaDB dan PostgreSQL. Pertanyaan berikutnya tentang topik yang sama akan dijawab dari memori lokal — jauh lebih cepat dan hemat API token.
@@ -173,12 +194,16 @@ POSTGRES_DSN=postgresql://user:password@localhost:5432/agentic_scraper
 # MiniMax API (https://platform.minimax.chat/)
 MINIMAX_API_KEY=your_api_key_here
 MINIMAX_GROUP_ID=your_group_id_here
-MINIMAX_BASE_URL=https://api.minimax.chat/v1
-MINIMAX_MODEL=minimax-m2.7
+MINIMAX_BASE_URL=https://ollama.com/v1
+MINIMAX_MODEL=minimax-m2.7:cloud
 
 # Agent Configuration
 AGENT_MAX_ITERATIONS=5
 AGENT_TEMPERATURE=0.3
+
+# Agent Thinking (optional)
+AGENT_THINKING_ENABLED=false
+AGENT_THINKING_MAX_TOKENS=1024
 
 # Jina.ai (Optional, untuk fallback scraper)
 JINA_API_KEY=your_jina_key_here
@@ -202,6 +227,7 @@ agentic-scraper/
 │   │   ├── agent.py          # /api/agent/ask, /api/agent/search
 │   │   ├── query.py          # /api/query (RAG endpoint)
 │   │   ├── scrape.py         # /api/scrape/fetch, /crawl, /store
+│   │   ├── settings.py       # /api/settings/agent (thinking toggle)
 │   │   ├── sources.py        # /api/sources (CRUD)
 │   │   └── jobs.py           # /api/scrape/jobs
 │   ├── db/
@@ -222,7 +248,8 @@ agentic-scraper/
 │   ├── core/
 │   │   ├── config.py         # Settings (pydantic-settings)
 │   │   ├── exceptions.py     # Domain exceptions
-│   │   └── logger.py         # Loguru setup
+│   │   ├── logger.py         # Loguru setup
+│   │   └── settings_state.py # Runtime settings state (thinking toggle)
 │   ├── scheduler/
 │   │   └── cron.py           # APScheduler setup
 │   └── main.py               # FastAPI app entrypoint
@@ -234,6 +261,7 @@ agentic-scraper/
         │   ├── dashboard/    # Analytics & job monitoring
         │   └── sources/      # Web sources management
         ├── components/       # Shared UI components
+        ├── hooks/            # Custom React hooks (useAgentSettings)
         ├── lib/              # API client (axios)
         └── types/            # TypeScript interfaces
 ```
@@ -247,6 +275,12 @@ agentic-scraper/
 |---|---|---|
 | `POST` | `/api/agent/ask` | Chat dengan agen AI |
 | `POST` | `/api/agent/search` | Test endpoint web search langsung |
+
+### Agent Settings
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/settings/agent` | Get current thinking settings |
+| `PATCH` | `/api/settings/agent` | Update thinking settings (runtime toggle) |
 
 ### Scraping
 | Method | Endpoint | Description |
@@ -280,6 +314,8 @@ agentic-scraper/
 - [x] Tool: `web_search` via DuckDuckGo
 - [x] Dynamic system prompt dengan tanggal real-time
 - [x] Prioritas: RAG → Web Search → Scrape → Jawab
+- [x] **RAG-First Enforcement**: `scrape_page` auto-redirects ke `web_search` jika belum ada `rag_query` di session
+- [x] **AI Thinking Mode**: Toggle on/off via API + FE, small token budget (~1K)
 
 ### ✅ Phase 3 — Frontend & UX (Done)
 - [x] React + Vite frontend
@@ -287,8 +323,21 @@ agentic-scraper/
 - [x] Chat UI dengan Markdown rendering
 - [x] Tool Call Trace visualization
 - [x] Persistent session via localStorage
+- [x] **LaTeX Math Rendering**: KaTeX support untuk rumus matematika
+- [x] **Agent Settings Toggle**: AI Thinking toggle di Agent Console UI
 
 ### 🔮 Phase 4 — Specialist Agents (Planned)
+
+#### ✅ RAG-First Scraping Enforcement (Done)
+- [x] Auto-redirect `scrape_page` → `web_search` jika belum ada `rag_query` di session
+- [x] Session tracking untuk tool calls
+- [x] Helper functions di `agent/memory.py`: `track_tool_call`, `has_rag_query_in_session`
+
+#### ✅ AI Thinking Mode (Done)
+- [x] Toggle on/off via Agent Console UI
+- [x] Hybrid config: env var (default) + runtime API override
+- [x] Small token budget (~1024 tokens)
+- [x] Settings state management di `core/settings_state.py`
 
 #### 📝 Code Writer Specialist
 Agen khusus yang dapat:
