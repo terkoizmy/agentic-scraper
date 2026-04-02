@@ -3,6 +3,7 @@ import { Bot, RefreshCw } from 'lucide-react';
 import { useAgentChat } from './hooks/useAgentChat';
 import { ChatBubble } from './components/chat-bubble';
 import { ChatInput } from './components/chat-input';
+import { AgentThinkingToggle } from '@/components/AgentThinkingToggle';
 
 export const AgentPage = () => {
   const { messages, isLoading, sendMessage, clearSession } = useAgentChat();
@@ -33,6 +34,8 @@ export const AgentPage = () => {
           <RefreshCw className="w-4 h-4" />
           <span className="hidden sm:inline">Sesi Baru</span>
         </button>
+        <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-700" />
+        <AgentThinkingToggle />
       </div>
 
       {/* Messages Area */}

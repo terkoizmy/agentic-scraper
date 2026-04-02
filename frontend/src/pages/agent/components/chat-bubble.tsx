@@ -1,6 +1,9 @@
 import { Bot, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import type { ChatMessage } from '../types/agent-types';
 import { RoleType } from '../types/agent-types';
 import { ToolCallTrace } from './tool-call-trace';
@@ -38,7 +41,8 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
             <span className="whitespace-pre-wrap">{message.content}</span>
           ) : (
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
               components={{
                 p: ({node, ...props}: any) => <p className="mb-3 last:mb-0" {...props} />,
                 ul: ({node, ...props}: any) => <ul className="list-disc pl-5 mb-3" {...props} />,
