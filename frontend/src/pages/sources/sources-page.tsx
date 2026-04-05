@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Database, Plus, CheckCircle2, XCircle } from 'lucide-react';
 import type { SourceDto } from '../../types/dtos';
+import { AddSourceModal } from './components/add-source-modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 export const SourcesPage = () => {
   const [sources, setSources] = useState<SourceDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     fetchSources();
@@ -35,7 +37,10 @@ export const SourcesPage = () => {
           </h1>
           <p className="text-zinc-500 text-lg">Daftar domain dan situs yang dipantau oleh sistem.</p>
         </div>
-        <button className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 px-5 py-2.5 rounded-xl font-medium shadow-md transition-all">
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 px-5 py-2.5 rounded-xl font-medium shadow-md transition-all"
+        >
           <Plus className="w-5 h-5" />
           <span>Tambah Source</span>
         </button>
@@ -103,6 +108,12 @@ export const SourcesPage = () => {
           </table>
         </div>
       </div>
+
+      <AddSourceModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={fetchSources} 
+      />
     </div>
   );
 };
