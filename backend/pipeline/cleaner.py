@@ -1,5 +1,6 @@
 import re
 from typing import Optional
+from urllib.parse import urlparse
 
 from langdetect import detect, LangDetectException
 from loguru import logger
@@ -13,6 +14,26 @@ def _detect_language(text: str) -> Optional[str]:
         return detect(text[:2000])
     except LangDetectException:
         return None
+
+
+def _extract_title_from_markdown(markdown: str) -> Optional[str]:
+    """Extract title from the first H1 heading in markdown content."""
+    lines = markdown.split('\n')
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('# '):
+            return stripped[2:].strip()
+    return None
+
+
+def _extract_title_from_url(url: str) -> str:
+    """Extract a fallback title from URL path."""
+    parsed = urlparse(url)
+    path = parsed.path.strip('/')
+    if path:
+        filename = path.split('/')[-1]
+        return filename.replace('-', ' ').replace('_', ' ').title()
+    return parsed.netloc
 
 
 def _normalize_whitespace(text: str) -> str:
@@ -53,9 +74,16 @@ def clean_scrape_result(result: ScrapeResult) -> ScrapeResult:
     if language:
         logger.debug("Cleaner: language='{}' for {}", language, result.url)
 
+    title = result.title
+    if not title:
+        title = _extract_title_from_markdown(cleaned)
+    if not title:
+        title = _extract_title_from_url(result.url)
+        logger.debug("Cleaner: title from URL '{}' for {}", title, result.url)
+
     return ScrapeResult(
         url=result.url,
         markdown=cleaned,
-        title=result.title,
+        title=title,
         language=language,
     )

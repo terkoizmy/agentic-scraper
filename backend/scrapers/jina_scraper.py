@@ -1,4 +1,6 @@
 import httpx
+from urllib.parse import urlparse
+
 from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -7,6 +9,23 @@ from scrapers.base import BaseScraper, ScrapeResult
 
 _JINA_BASE_URL = "https://r.jina.ai"
 _REQUEST_TIMEOUT = 30
+
+
+def _extract_title_from_markdown(markdown: str, url: str) -> str:
+    """Extract title from markdown content, with URL-based fallback."""
+    lines = markdown.split('\n')
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('# '):
+            return stripped[2:].strip()
+    
+    parsed = urlparse(url)
+    path = parsed.path.strip('/')
+    if path:
+        filename = path.split('/')[-1]
+        return filename.replace('-', ' ').replace('_', ' ').title()
+    
+    return parsed.netloc
 
 
 class JinaScraper(BaseScraper):
@@ -41,5 +60,6 @@ class JinaScraper(BaseScraper):
         if not markdown:
             raise ScraperError(f"Jina Reader returned empty content for '{url}'")
 
-        logger.success("JinaScraper: {} chars fetched from {}", len(markdown), url)
-        return ScrapeResult(url=url, markdown=markdown)
+        title = _extract_title_from_markdown(markdown, url)
+        logger.success("JinaScraper: {} chars fetched from {} (title: {})", len(markdown), url, title)
+        return ScrapeResult(url=url, markdown=markdown, title=title)

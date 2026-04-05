@@ -147,7 +147,7 @@ async def crawl_docs(body: CrawlRequest):
 async def store_content(body: StoreRequest):
     """Store raw Markdown directly into the pipeline without re-scraping the URL."""
     try:
-        chunks_stored, is_duplicate = await _run_pipeline(body.url, body.markdown, None, None)
+        chunks_stored, is_duplicate = await _run_pipeline(body.url, body.markdown, body.title, None)
     except (EmbeddingError, VectorStoreError) as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 

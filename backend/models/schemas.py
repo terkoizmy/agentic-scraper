@@ -84,6 +84,7 @@ class CrawlResponse(BaseModel):
 class StoreRequest(BaseModel):
     url: str
     markdown: str
+    title: Optional[str] = None
 
 
 class StoreResponse(BaseModel):

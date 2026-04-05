@@ -182,6 +182,26 @@ async def insert_document(
     return row["id"]
 
 
+async def list_documents_without_title() -> list[dict]:
+    """Return all documents where title is NULL or empty."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT id, url, content FROM documents WHERE title IS NULL OR title = ''"
+        )
+    return [dict(r) for r in rows]
+
+
+async def update_document_title(doc_id: uuid.UUID, title: str) -> None:
+    """Update the title of a document."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE documents SET title = $1 WHERE id = $2",
+            title, doc_id,
+        )
+
+
 # ── Scrape Jobs ────────────────────────────────────────────────────────────────
 
 async def create_job(

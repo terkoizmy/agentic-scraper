@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom"
-import { Bot, Database, Blocks } from "lucide-react"
+import { Bot, Database, Blocks, Activity } from "lucide-react"
 import AgentPage from "./pages/agent/agent-page"
 
 import DashboardPage from "./pages/dashboard/dashboard-page"
 import SourcesPage from "./pages/sources/sources-page"
+import PlaygroundPage from "./pages/playground/playground-page"
+import JobsPage from "./pages/jobs/jobs-page"
 
 export default function App() {
   return (
@@ -23,6 +25,12 @@ export default function App() {
             <Link to="/agent" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors font-medium">
               <Bot className="w-4 h-4 text-zinc-500" /> Agent Console
             </Link>
+            <Link to="/playground" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors font-medium">
+              <Blocks className="w-4 h-4 text-zinc-500" /> RAG Playground
+            </Link>
+            <Link to="/jobs" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors font-medium">
+              <Activity className="w-4 h-4 text-zinc-500" /> Scrape Jobs
+            </Link>
             <Link to="/sources" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors font-medium">
               <Database className="w-4 h-4 text-zinc-500" /> Web Sources
             </Link>
@@ -34,6 +42,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/agent" element={<AgentPage />} />
+            <Route path="/playground" element={<PlaygroundPage />} />
+            <Route path="/jobs" element={<JobsPage />} />
             <Route path="/sources" element={<SourcesPage />} />
           </Routes>
         </main>

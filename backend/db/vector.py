@@ -67,6 +67,37 @@ def add_chunks(
         raise VectorStoreError(f"Failed to upsert chunks into ChromaDB: {exc}") from exc
 
 
+def update_chunks_title(url: str, new_title: str) -> int:
+    """Update title metadata for all chunks matching the given URL.
+
+    Returns the number of chunks updated.
+    """
+    try:
+        collection = get_collection()
+        results = collection.get(where={"url": url}, include=["metadatas"])
+
+        if not results or not results.get("ids"):
+            return 0
+
+        chunk_ids = results["ids"]
+        old_metadatas = results.get("metadatas", [])
+
+        new_metadatas = []
+        for meta in old_metadatas:
+            updated = dict(meta)
+            updated["title"] = new_title
+            new_metadatas.append(updated)
+
+        collection.update(
+            ids=chunk_ids,
+            metadatas=new_metadatas,
+        )
+        logger.debug("Updated title to '{}' for {} chunks", new_title, len(chunk_ids))
+        return len(chunk_ids)
+    except Exception as exc:
+        raise VectorStoreError(f"Failed to update chunks title in ChromaDB: {exc}") from exc
+
+
 def query_similar(
     query_embedding: list[float],
     top_k: int = 5,
