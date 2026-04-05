@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from db import postgres
 from models.schemas import SourceCreate, SourceResponse, SourceUpdate
+from scheduler.cron import sync_jobs
 
 router = APIRouter()
 
@@ -18,12 +19,14 @@ async def list_sources():
 @router.post("/", response_model=SourceResponse, status_code=status.HTTP_201_CREATED)
 async def create_source(body: SourceCreate):
     """Register a new scraping source."""
-    return await postgres.create_source(
+    result = await postgres.create_source(
         url=body.url,
         name=body.name,
         source_type=body.source_type,
         schedule_hours=body.schedule_hours,
     )
+    await sync_jobs()
+    return result
 
 
 @router.patch("/{source_id}", response_model=SourceResponse)
@@ -33,6 +36,7 @@ async def update_source(source_id: uuid.UUID, body: SourceUpdate):
     updated = await postgres.update_source(source_id, updates)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+    await sync_jobs()
     return updated
 
 
@@ -42,3 +46,4 @@ async def delete_source(source_id: uuid.UUID):
     deleted = await postgres.delete_source(source_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+    await sync_jobs()

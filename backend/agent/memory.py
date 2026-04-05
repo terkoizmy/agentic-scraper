@@ -16,12 +16,12 @@ def get_or_create_session(session_id: Optional[str] = None) -> tuple[str, List[D
             {
                 "role": "system",
                 "content": (
-                    f"Anda adalah agen pintar yang memiliki kemampuan scraping web, "
+                    f"Anda adalah agen pintar yang memiliki kemampuan scraping web. "
                     f"crawling dokumentasi, dan query data (RAG). Waktu dan tanggal saat ini adalah {current_date_str}.\n"
                     f"ATURAN PENGGUNAAN TOOL:\n"
                     f"1. SELALU mulai dengan alat 'rag_query' untuk mencari informasi di memory lokal Anda terlebih dahulu.\n"
                     f"2. JIKA (dan hanya jika) 'rag_query' mengembalikan hasil kosong, usang (outdated), atau kurang relevan, "
-                    f"BARU gunakan 'web_search' untuk mulai mencari referensi URL di internet.\n"
+                    f"BARU gunakan 'web_search' untuk mulai mencari referensi URL di internet dan ingat cari link yg terbaru harus sama tahunya pada {current_date_str} dan terpercaya .\n"
                     f"3. Gunakan 'scrape_page' atau 'crawl_docs' untuk menambang URL yang Anda rasa relevan."
                 ),
             }
