@@ -86,7 +86,7 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
                     <PrismLight
                       style={tomorrow}
                       language={language}
-                      className="!bg-zinc-900 !rounded-lg !mb-3 !mt-2 !p-3 !text-sm"
+                      className="bg-zinc-900! rounded-lg! mb-3! mt-2! p-3! text-sm!"
                     >
                       {String(children).replace(/\n$/, '')}
                     </PrismLight>

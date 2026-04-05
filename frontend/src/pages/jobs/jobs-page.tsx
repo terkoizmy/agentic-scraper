@@ -30,7 +30,7 @@ export const JobsPage = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-2 flex items-center gap-3">
-            <Activity className="w-8 h-8 text-amber-500" /> 
+            <Activity className="w-8 h-8 text-amber-500" />
             Riwayat Scraping Jobs
           </h1>
           <p className="text-zinc-500 text-lg">Catatan audit lengkap aktivitas background scraping.</p>
@@ -76,11 +76,10 @@ export const JobsPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border flex items-center gap-1 w-fit ${
-                        job.status === 'done' ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' :
-                        job.status === 'running' ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 animate-pulse' :
-                        'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
-                      }`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border flex items-center gap-1 w-fit ${job.status === 'done' ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' :
+                          job.status === 'running' ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 animate-pulse' :
+                            'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+                        }`}>
                         {job.status === 'done' && <CheckCircle2 className="w-3 h-3" />}
                         {job.status === 'failed' && <AlertTriangle className="w-3 h-3" />}
                         {job.status}
@@ -93,7 +92,7 @@ export const JobsPage = () => {
                     </td>
                     <td className="px-6 py-4 max-w-[250px]">
                       {job.error ? (
-                        <div className="text-red-600 dark:text-red-400 text-xs bg-red-50 dark:bg-red-900/10 p-2 rounded-lg border border-red-100 dark:border-red-900/30 truncate hover:whitespace-normal hover:break-words cursor-help" title={job.error}>
+                        <div className="text-red-600 dark:text-red-400 text-xs bg-red-50 dark:bg-red-900/10 p-2 rounded-lg border border-red-100 dark:border-red-900/30 truncate hover:whitespace-normal hover:wrap-break-word cursor-help" title={job.error}>
                           {job.error}
                         </div>
                       ) : (
