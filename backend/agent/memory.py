@@ -10,7 +10,7 @@ _session_tool_calls: Dict[str, List[str]] = {}
 def get_or_create_session(session_id: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
     """Retrieve an existing session or initialize a fresh context."""
     if not session_id or session_id not in _active_sessions:
-        session_id = str(uuid.uuid4())
+        session_id = session_id if session_id else str(uuid.uuid4())
         current_date_str = datetime.now().strftime("%Y-%m-%d")
         _active_sessions[session_id] = [
             {

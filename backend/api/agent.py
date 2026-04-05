@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 
 from agent.brain import run_agent
+from agent.memory import _session_tool_calls
 from db import postgres
 from models.schemas import AgentAskRequest, AgentAskResponse, WebSearchRequest, WebSearchResponse
 
@@ -49,3 +50,10 @@ async def web_search_endpoint(body: WebSearchRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Web search failed: {exc}",
         )
+
+
+@router.get("/status/{session_id}")
+async def get_agent_status(session_id: str):
+    """Return the list of tool calls currently executed/being executed in the session."""
+    tools = _session_tool_calls.get(session_id, [])
+    return {"status": "ok", "tools": tools}

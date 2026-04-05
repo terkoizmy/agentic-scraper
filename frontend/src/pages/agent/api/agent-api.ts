@@ -14,3 +14,12 @@ export const askAgent = async (request: AgentAskRequest): Promise<AgentAskRespon
     throw new Error('Failed to ask agent due to network error');
   }
 };
+
+export const getAgentStatus = async (sessionId: string): Promise<string[]> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/agent/status/${sessionId}`);
+    return response.data.tools as string[];
+  } catch (error) {
+    return [];
+  }
+};

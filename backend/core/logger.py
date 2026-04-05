@@ -1,9 +1,20 @@
+import logging
 import sys
 from loguru import logger
 from core.config import settings
 
+class EndpointFilter(logging.Filter):
+    """Filter out logs containing specific endpoint paths from uvicorn access logs."""
+    def filter(self, record: logging.LogRecord) -> bool:
+        # Ignore logs for the agent status polling endpoint.
+        return "/api/agent/status/" not in record.getMessage()
+
 def setup_logger():
+    """Configure loguru to output to stdout and file, and filter specific uvicorn access logs."""
     logger.remove()
+
+    # Apply filter to uvicorn access logger to silence polling logs.
+    logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
 
     # Console handler (colorized)
     logger.add(

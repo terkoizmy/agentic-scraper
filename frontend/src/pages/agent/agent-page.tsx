@@ -6,7 +6,7 @@ import { ChatInput } from './components/chat-input';
 import { AgentThinkingToggle } from '@/components/AgentThinkingToggle';
 
 export const AgentPage = () => {
-  const { messages, isLoading, sendMessage, clearSession } = useAgentChat();
+  const { messages, isLoading, currentTools, sendMessage, clearSession } = useAgentChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,7 +64,17 @@ export const AgentPage = () => {
                   <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }}></span>
                   <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }}></span>
                   <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                  <span className="ml-2 text-sm text-zinc-500 font-medium">Agent sedang berpikir dan menjalankan alat...</span>
+                  <span className="ml-2 text-sm text-zinc-500 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-xs md:max-w-md">
+                    {(() => {
+                      if (!currentTools || currentTools.length === 0) return "Agent sedang memproses permintaan...";
+                      const activeTool = currentTools[currentTools.length - 1];
+                      if (activeTool === "rag_query") return "Sedang mencari data di Vektor RAG...";
+                      if (activeTool === "web_search") return "Mengakses DuckDuckGo web search...";
+                      if (activeTool === "scrape_page") return "Merayapi url langsung...";
+                      if (activeTool === "deep_research") return "Mengeksekusi Deep Research pipeline...";
+                      return `Menjalankan alat: ${activeTool}...`;
+                    })()}
+                  </span>
                 </div>
               </div>
             )}

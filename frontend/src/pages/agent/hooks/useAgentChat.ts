@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { ChatMessage } from '../types/agent-types';
 import { RoleType } from '../types/agent-types';
-import { askAgent } from '../api/agent-api';
+import { askAgent, getAgentStatus } from '../api/agent-api';
 
 const SESSION_STORAGE_KEY = 'agentic_chat_session_id';
 const MESSAGES_STORAGE_KEY = 'agentic_chat_messages';
@@ -13,6 +13,7 @@ export const useAgentChat = () => {
   });
   
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [currentTools, setCurrentTools] = useState<string[]>([]);
   
   const [sessionId, setSessionId] = useState<string | undefined>(() => {
     return localStorage.getItem(SESSION_STORAGE_KEY) || undefined;
@@ -48,11 +49,29 @@ export const useAgentChat = () => {
 
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
+    setCurrentTools([]);
+
+    let chatSessionId = sessionId;
+    if (!chatSessionId) {
+      chatSessionId = crypto.randomUUID();
+      setSessionId(chatSessionId);
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const tools = await getAgentStatus(chatSessionId as string);
+        if (tools && Array.isArray(tools)) {
+          setCurrentTools(tools);
+        }
+      } catch (err) {
+        // ignore polling errors
+      }
+    }, 1200);
 
     try {
       const response = await askAgent({
         message: content,
-        session_id: sessionId,
+        session_id: chatSessionId,
       });
 
       if (!sessionId) {
@@ -77,6 +96,8 @@ export const useAgentChat = () => {
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
+      clearInterval(pollInterval);
+      setCurrentTools([]);
       setIsLoading(false);
     }
   }, [sessionId]);
@@ -84,6 +105,7 @@ export const useAgentChat = () => {
   return {
     messages,
     isLoading,
+    currentTools,
     sendMessage,
     clearSession,
   };
