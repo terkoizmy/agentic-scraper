@@ -58,6 +58,18 @@ CREATE TABLE IF NOT EXISTS agent_sessions (
     final_answer TEXT,
     created_at   TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS agent_session_history (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id  TEXT NOT NULL,
+    role        TEXT NOT NULL,
+    content     TEXT NOT NULL,
+    tool_calls  JSONB DEFAULT '[]',
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_session_history_session_id ON agent_session_history(session_id);
+CREATE INDEX IF NOT EXISTS idx_agent_sessions_session_id ON agent_sessions(session_id);
 """
 
 
@@ -278,4 +290,73 @@ async def save_agent_session(
             """,
             session_id, user_message, json.dumps(tool_calls, default=str), final_answer,
         )
+
+
+async def save_agent_message(
+    session_id: str,
+    role: str,
+    content: str,
+    tool_calls: Optional[list[dict]] = None,
+) -> None:
+    """Persist a single message in the agent session history."""
+    import json
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO agent_session_history (session_id, role, content, tool_calls)
+            VALUES ($1, $2, $3, $4)
+            """,
+            session_id, role, content, json.dumps(tool_calls or [], default=str),
+        )
+
+
+async def get_session_history(session_id: str) -> list[dict]:
+    """Return all messages for a session ordered by creation time."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT role, content, tool_calls, created_at
+            FROM agent_session_history
+            WHERE session_id = $1
+            ORDER BY created_at ASC
+            """,
+            session_id,
+        )
+    return [
+        {
+            "role": r["role"],
+            "content": r["content"],
+            "tool_calls": r["tool_calls"] if r["tool_calls"] else [],
+            "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+        }
+        for r in rows
+    ]
+
+
+async def list_agent_sessions(limit: int = 50, offset: int = 0) -> tuple[list[dict], int]:
+    """Return paginated list of unique session IDs with latest message preview."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT DISTINCT ON (session_id)
+                   session_id,
+                   created_at,
+                   (SELECT content FROM agent_session_history sh2
+                    WHERE sh2.session_id = agent_session_history.session_id
+                    ORDER BY created_at ASC LIMIT 1) as first_message,
+                   (SELECT content FROM agent_session_history sh2
+                    WHERE sh2.session_id = agent_session_history.session_id
+                    ORDER BY created_at DESC LIMIT 1) as last_message
+            FROM agent_session_history
+            ORDER BY session_id, created_at DESC
+            """,
+        )
+        count_row = await conn.fetchrow("SELECT COUNT(DISTINCT session_id) FROM agent_session_history")
+        total = count_row["count"] if count_row else 0
+
+        limited_rows = rows[offset : offset + limit]
+        return [dict(r) for r in limited_rows], total
 

@@ -1,10 +1,19 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
 
 from agent.brain import run_agent
 from agent.memory import _session_tool_calls
 from db import postgres
-from models.schemas import AgentAskRequest, AgentAskResponse, WebSearchRequest, WebSearchResponse
+from models.schemas import (
+    AgentAskRequest,
+    AgentAskResponse,
+    SessionHistoryResponse,
+    SessionListItem,
+    SessionListResponse,
+    SessionMessage,
+    WebSearchRequest,
+    WebSearchResponse,
+)
 
 router = APIRouter()
 
@@ -49,6 +58,60 @@ async def web_search_endpoint(body: WebSearchRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Web search failed: {exc}",
+        )
+
+
+@router.get("/sessions", response_model=SessionListResponse)
+async def list_sessions(
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    """Return paginated list of all agent sessions."""
+    try:
+        sessions, total = await postgres.list_agent_sessions(limit=limit, offset=offset)
+        return SessionListResponse(
+            sessions=[
+                SessionListItem(
+                    session_id=s["session_id"],
+                    first_message=s.get("first_message"),
+                    last_message=s.get("last_message"),
+                    created_at=s.get("created_at"),
+                )
+                for s in sessions
+            ],
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
+    except Exception as exc:
+        logger.exception("Failed to list sessions")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list sessions: {exc}",
+        )
+
+
+@router.get("/sessions/{session_id}", response_model=SessionHistoryResponse)
+async def get_session_history(session_id: str):
+    """Return full message history for a specific session."""
+    try:
+        messages = await postgres.get_session_history(session_id)
+        if not messages:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session '{session_id}' not found",
+            )
+        return SessionHistoryResponse(
+            session_id=session_id,
+            messages=[SessionMessage(**m) for m in messages],
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to get session history")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get session history: {exc}",
         )
 
 

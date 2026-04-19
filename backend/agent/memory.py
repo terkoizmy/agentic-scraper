@@ -2,6 +2,8 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from db import postgres
+
 
 _active_sessions: Dict[str, List[Dict[str, Any]]] = {}
 _session_tool_calls: Dict[str, List[str]] = {}
@@ -54,10 +56,19 @@ def format_tool_message(tool_call_id: str, tool_name: str, result_content: str) 
     }
 
 
-def add_message(session_id: str, message: Dict[str, Any]) -> None:
+async def add_message(session_id: str, message: Dict[str, Any]) -> None:
     """Append a formatted arbitrary message block to a session state."""
     if session_id in _active_sessions:
         _active_sessions[session_id].append(message)
+    try:
+        await postgres.save_agent_message(
+            session_id=session_id,
+            role=message.get("role", "user"),
+            content=message.get("content", ""),
+            tool_calls=message.get("tool_calls"),
+        )
+    except Exception:
+        pass
 
 
 def clear_session(session_id: str) -> None:

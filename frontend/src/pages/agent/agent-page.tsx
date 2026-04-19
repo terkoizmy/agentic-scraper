@@ -1,17 +1,37 @@
-import { useEffect, useRef } from 'react';
-import { Bot, RefreshCw } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Bot, RefreshCw, History } from 'lucide-react';
 import { useAgentChat } from './hooks/useAgentChat';
 import { ChatBubble } from './components/chat-bubble';
 import { ChatInput } from './components/chat-input';
 import { AgentThinkingToggle } from '@/components/AgentThinkingToggle';
+import { SessionList } from './components/session-list';
+import type { SessionMessage } from './api/agent-api';
+import type { ChatMessage } from './types/agent-types';
 
 export const AgentPage = () => {
-  const { messages, isLoading, currentTools, sendMessage, clearSession } = useAgentChat();
+  const { messages, setMessages, isLoading, currentTools, sendMessage, clearSession, setSessionId } = useAgentChat();
+  const [showSessionList, setShowSessionList] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  const handleSelectSession = (sessionId: string, sessionMessages: SessionMessage[]) => {
+    setSessionId(sessionId);
+    const convertedMessages: ChatMessage[] = sessionMessages
+      .filter((m) => m.role !== 'system')
+      .map((m, index) => ({
+        id: `${sessionId}-${index}`,
+        role: m.role as 'user' | 'agent',
+        content: m.content,
+        toolCalls: m.tool_calls as unknown as ChatMessage['toolCalls'],
+        timestamp: m.created_at || new Date().toISOString(),
+      }));
+    setMessages(convertedMessages);
+    localStorage.setItem('agentic_chat_session_id', sessionId);
+    localStorage.setItem('agentic_chat_messages', JSON.stringify(convertedMessages));
+  };
 
   return (
     <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950">
@@ -26,6 +46,14 @@ export const AgentPage = () => {
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">Berkomunikasi dengan MiniMax M2.7 Orchestrator</p>
           </div>
         </div>
+        <button
+          onClick={() => setShowSessionList(true)}
+          title="Riwayat Sesi"
+          className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm"
+        >
+          <History className="w-4 h-4" />
+          <span className="hidden sm:inline">Riwayat</span>
+        </button>
         <button
           onClick={clearSession}
           title="Mulai Sesi Baru"
@@ -87,6 +115,12 @@ export const AgentPage = () => {
       <div className="shrink-0 z-20 sticky bottom-0">
          <ChatInput onSendMessage={sendMessage} isLoading={isLoading} />
       </div>
+
+      <SessionList
+        isOpen={showSessionList}
+        onClose={() => setShowSessionList(false)}
+        onSelectSession={handleSelectSession}
+      />
     </div>
   );
 };

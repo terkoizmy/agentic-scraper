@@ -104,9 +104,12 @@ export const useAgentChat = () => {
 
   return {
     messages,
+    setMessages,
     isLoading,
     currentTools,
     sendMessage,
     clearSession,
+    sessionId,
+    setSessionId,
   };
 };

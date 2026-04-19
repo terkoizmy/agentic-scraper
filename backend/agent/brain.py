@@ -75,7 +75,7 @@ async def run_agent(message: str, session_id: str | None = None) -> tuple[str, s
 
     user_msg = format_user_message(message)
     messages_copy.append(user_msg)
-    add_message(sid, user_msg)
+    await add_message(sid, user_msg)
 
     executed_records: list[ToolCallRecord] = []
 
@@ -104,7 +104,7 @@ async def run_agent(message: str, session_id: str | None = None) -> tuple[str, s
 
         asst_msg = format_assistant_response(content, tool_calls)
         messages_copy.append(asst_msg)
-        add_message(sid, asst_msg)
+        await add_message(sid, asst_msg)
 
         if not tool_calls:
             logger.info("Agent concluded with a final answer in {} iterations", iteration + 1)
@@ -131,7 +131,7 @@ async def run_agent(message: str, session_id: str | None = None) -> tuple[str, s
 
             tool_msg_form = format_tool_message(t_id, t_name, t_result_str)
             messages_copy.append(tool_msg_form)
-            add_message(sid, tool_msg_form)
+            await add_message(sid, tool_msg_form)
 
     logger.warning("Agent exhausted max {} iterations.", settings.agent_max_iterations)
     msg = "Maaf, saya mencapai batas iterasi pemikiran. Mohon spesifikasikan lebih lanjut."

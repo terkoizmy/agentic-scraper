@@ -172,3 +172,29 @@ class DeepResearchResponse(BaseModel):
     websites_scraped: int
     total_chunks_stored: int
     deep_crawl_results: dict[str, CrawlResponse] = {}
+
+
+class SessionListItem(BaseModel):
+    session_id: str
+    first_message: Optional[str] = None
+    last_message: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class SessionListResponse(BaseModel):
+    sessions: list[SessionListItem]
+    total: int
+    limit: int
+    offset: int
+
+
+class SessionMessage(BaseModel):
+    role: str
+    content: str
+    tool_calls: Optional[list[dict]] = None
+    created_at: Optional[str] = None
+
+
+class SessionHistoryResponse(BaseModel):
+    session_id: str
+    messages: list[SessionMessage]
